@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 時間壓力單字測驗 (Time Attack)</title>
+    <style>
+        /* 基礎樣式 */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f4f8; /* 柔和藍色背景 */
+            color: #333;
+            text-align: center;
+            padding: 20px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            color: #d9534f; /* 醒目紅色標題 */
+        }
+        
+        /* 統計與紀錄區 */
+        .stats-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        .stat-item {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .high-score {
+            color: #ffc107; /* 皇冠金色 */
+        }
+        .combo-display {
+            color: #e67e22; /* Combo 橘色 */
+            font-size: 1.5em;
+            transition: transform 0.2s;
+        }
+
+        /* 單字顯示區 */
+        .chinese-word {
+            font-size: 3em;
+            margin: 20px 0;
+            padding: 10px;
+            display: inline-block;
+            color: #2c3e50;
+        }
+        
+        /* 時間壓力 Bar 樣式 */
+        .time-bar-container {
+            width: 100%;
+            height: 25px;
+            background-color: #eee;
+            border-radius: 12px;
+            margin: 10px 0 20px;
+            overflow: hidden;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        #time-bar {
+            height: 100%;
+            width: 100%; /* 初始為 100% */
+            background-color: #f39c12; /* 初始橘色 */
+            transition: width 0.1s linear; /* 平滑縮短 */
+        }
+
+        /* 輸入與按鈕 */
+        #answer-input {
+            padding: 12px;
+            width: 70%;
+            margin-bottom: 15px;
+            border: 3px solid #ccc;
+            border-radius: 8px;
+            font-size: 1.2em;
+            text-align: center;
+        }
+        button {
+            padding: 12px 25px;
+            background-color: #2ecc71; /* 綠色按鈕 */
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin: 5px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #27ae60;
+        }
+
+        /* 訊息與結果 */
+        #message {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.3em;
+            min-height: 30px; 
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+        .correct { color: #28a745; }
+        .incorrect { color: #dc3545; }
+        .show { opacity: 1 !important; }
+
+        /* 遊戲結束蓋板 */
+        #game-over-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        #game-over-overlay button {
+            background-color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⏳ Time Attack ⚡ 單字挑戰</h1>
+
+    <div class="stats-bar">
+        <div class="stat-item high-score">
+            👑 最高紀錄: <span id="high-score-display">0</span>
+        </div>
+        <div class="stat-item">
+            分數: <span id="score-display">0</span>
+        </div>
+        <div class="stat-item combo-display" id="combo-display"></div>
+    </div>
+    
+    <div class="time-bar-container">
+        <div id="time-bar"></div>
+    </div>
+    
+    <div class="chinese-word" id="chinese-display">點擊「開始遊戲」</div>
+
+    <input type="text" id="answer-input" placeholder="請輸入英文單字或片語" disabled>
+    <br>
+    
+    <button id="start-button" onclick="startGame()">開始遊戲</button>
+    <button id="submit-button" onclick="checkAnswer()" disabled>確認答案</button>
+    
+    <div id="message"></div>
+</div>
+
+<div id="game-over-overlay">
+    <h2>時間到！挑戰失敗！</h2>
+    <p>您的分數是: <span id="final-score">0</span></p>
+    <p id="new-high-score-msg"></p>
+    <button onclick="window.location.reload()">再玩一次</button>
+</div>
+
+<script>
+    // --- I. 參數與單字庫 ---
+
+    const vocabulary = {
+        "照片": "photo", "當然": "of course", "花費": "cost", "元": "dollar", "發送;寄": "send",
+        "包裹": "package", "付錢": "pay", "價錢": "price", "低的": "low", "花費": "spend",
+        "分(貨幣單位)": "cent", "便宜的": "cheap", "擔心;憂慮": "worry", "雨傘": "umbrella",
+        "方便的": "convenient", "遠的": "far", "廁所": "restroom", "城鎮": "town",
+        "便利商站": "convenience store", "印刷": "print", "帳單": "bill", "待;停留": "stay",
+        "百貨公司": "department store", "祈求;禱告": "pray", "寺廟": "temple",
+        "外國人": "foreigner", "想到": "think of", "遊客": "visitor", "外國的": "foreign",
+        "抵達;觸及": "reach", "貴的": "expensive", "城市": "city", "舒適的": "comfortable",
+        "不多;少許": "little", "大部份的": "most", "某人": "someone", "幫忙": "lend a hand",
+        "豐富的": "rich", "以為傲": "be proud of...", "無尾熊": "koala", "景色": "scenery",
+        "旅行": "travel", "往任何地方": "anywhere", "此外": "besides"
+    };
+    const chineseWords = Object.keys(vocabulary);
+
+    // 遊戲狀態變數
+    let currentChineseWord = '';
+    let score = 0;
+    let combo = 0;
+    let highScore = 0;
+    let level = 1;
+    let totalTime = 10; // 基礎時間 (秒)
+    let timeLeft = totalTime;
+    let timerInterval = null;
+    const MIN_TIME = 5; // 最少給 5 秒
+
+    // DOM 元素快取
+    const elements = {
+        display: document.getElementById('chinese-display'),
+        input: document.getElementById('answer-input'),
+        score: document.getElementById('score-display'),
+        combo: document.getElementById('combo-display'),
+        highScore: document.getElementById('high-score-display'),
+        timeBar: document.getElementById('time-bar'),
+        message: document.getElementById('message'),
+        overlay: document.getElementById('game-over-overlay'),
+        startButton: document.getElementById('start-button'),
+        submitButton: document.getElementById('submit-button')
+    };
+
+    // --- II. 遊戲流程控制 ---
+
+    /**
+     * 初始化遊戲和載入最高紀錄
+     */
+    function initializeGame() {
+        const savedScore = localStorage.getItem('highScore');
+        highScore = savedScore ? parseInt(savedScore, 10) : 0;
+        elements.highScore.textContent = highScore;
+        elements.display.textContent = '準備好了嗎？';
+    }
+
+    /**
+     * 開始或重新開始遊戲
+     */
+    function startGame() {
+        // 重設狀態
+        score = 0;
+        combo = 0;
+        level = 1;
+        updateStats();
+
+        elements.startButton.style.display = 'none';
+        elements.submitButton.disabled = false;
+        elements.input.disabled = false;
+        elements.input.focus();
+        elements.overlay.style.display = 'none';
+        
+        nextWord();
+    }
+    
+    /**
+     * 處理時間用盡，遊戲結束
+     */
+    function gameOver() {
+        clearInterval(timerInterval);
+        elements.submitButton.disabled = true;
+        elements.input.disabled = true;
+        
+        let msg = '';
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('highScore', highScore);
+            elements.highScore.textContent = highScore;
+            msg = '✨ 新的最高紀錄！恭喜！';
+        }
+
+        document.getElementById('final-score').textContent = score;
+        document.getElementById('new-high-score-msg').textContent = msg;
+        elements.overlay.style.display = 'flex'; // 顯示遊戲結束畫面
+    }
+
+    /**
+     * 載入下一題
+     */
+    function nextWord() {
+        clearInterval(timerInterval); // 停止當前計時器
+
+        // 難度控制：每 5 題升級一次，時間減少 0.5 秒，但最少 5 秒
+        if (score > 0 && score % 50 === 0) { // 假設每 10 分 (1題) 算一點，50分升級
+             level++;
+             totalTime = Math.max(MIN_TIME, totalTime - 0.5);
+        }
+
+        // 重設介面
+        elements.input.value = '';
+        elements.input.disabled = false;
+        elements.input.focus();
+        elements.message.classList.remove('show');
+        
+        // 取得並顯示新的單字
+        currentChineseWord = chineseWords[Math.floor(Math.random() * chineseWords.length)];
+        elements.display.textContent = currentChineseWord;
+        
+        // 啟動計時器
+        timeLeft = totalTime;
+        startTimer();
+    }
+
+    // --- III. 計時器與時間 Bar ---
+
+    /**
+     * 啟動計時器邏輯
+     */
+    function startTimer() {
+        const startTime = Date.now();
+        const endTime = startTime + totalTime * 1000;
+
+        function updateBar() {
+            const now = Date.now();
+            const remainingTime = endTime - now;
+            
+            if (remainingTime <= 0) {
+                gameOver();
+                return;
+            }
+
+            // 更新時間
+            timeLeft = remainingTime / 1000;
+            
+            // 更新 Bar 寬度和顏色
+            const percentage = (remainingTime / (totalTime * 1000)) * 100;
+            elements.timeBar.style.width = `${percentage}%`;
+            
+            if (percentage <= 30) {
+                elements.timeBar.style.backgroundColor = '#e74c3c'; // 紅色
+            } else if (percentage <= 60) {
+                elements.timeBar.style.backgroundColor = '#f39c12'; // 橘色
+            } else {
+                elements.timeBar.style.backgroundColor = '#3498db'; // 藍色
+            }
+        }
+        
+        timerInterval = setInterval(updateBar, 100);
+        updateBar(); // 立即執行一次，避免延遲
+    }
+
+
+    // --- IV. 計分與答案檢查 ---
+
+    /**
+     * 檢查學生輸入的答案
+     */
+    function checkAnswer() {
+        if (!currentChineseWord || elements.input.disabled) return;
+
+        const inputAnswer = elements.input.value.trim().toLowerCase();
+        // 處理片語後面的 ...
+        const correctAnswer = vocabulary[currentChineseWord].trim().toLowerCase().replace('...', '').replace('.', ''); 
+
+        elements.input.disabled = true; // 檢查後先鎖定輸入
+
+        if (inputAnswer === correctAnswer) {
+            // 答對邏輯
+            combo++;
+            calculateScore();
+            displayMessage('✅ 正確！', 'correct');
+
+            setTimeout(nextWord, 700); // 延遲 0.7 秒後進入下一題
+        } else {
+            // 答錯邏輯
+            combo = 0; // Combo 歸零
+            updateStats();
+            clearInterval(timerInterval); // 答錯停止計時
+
+            elements.timeBar.style.width = '100%'; // 重設 Bar 視覺
+            elements.timeBar.style.backgroundColor = '#e74c3c';
+            
+            displayMessage(`❌ 錯誤！正解是：${vocabulary[currentChineseWord]}`, 'incorrect');
+
+            setTimeout(gameOver, 1500); // 延遲 1.5 秒後結束遊戲
+        }
+    }
+
+    /**
+     * 計算並更新分數
+     */
+    function calculateScore() {
+        const basePoints = 10;
+        
+        // 速度獎勵: 剩餘時間百分比決定獎勵倍數 (0 ~ 1)
+        const timeBonus = Math.max(0, timeLeft / totalTime); // 剩餘時間越多，接近 1
+        const speedPoints = Math.round(basePoints * timeBonus); 
+        
+        // Combo 加成: 達到 Combo 才會加成 (例如 Combo 3 時，倍數是 2)
+        const comboMultiplier = combo > 1 ? combo : 1; 
+
+        const earnedPoints = (basePoints + speedPoints) * comboMultiplier;
+        score += earnedPoints;
+
+        updateStats();
+    }
+
+    /**
+     * 更新畫面上的分數和 Combo 顯示
+     */
+    function updateStats() {
+        elements.score.textContent = score;
+
+        if (combo > 1) {
+            elements.combo.textContent = `🔥 Combo x${combo}`;
+        } else {
+            elements.combo.textContent = '';
+        }
+    }
+    
+    /**
+     * 顯示結果訊息
+     */
+    function displayMessage(text, className) {
+        elements.message.textContent = text;
+        elements.message.className = className + ' show'; // 顯示訊息
+    }
+
+    // --- V. 事件監聽 ---
+    
+    // 監聽 Enter 鍵，等於點擊「確認答案」
+    elements.input.addEventListener('keyup', (event) => {
+        if (event.key === 'Enter') {
+            checkAnswer();
+        }
+    });
+
+    // 網頁載入後初始化
+    window.onload = initializeGame;
+</script>
+
+</body>
+</html>
