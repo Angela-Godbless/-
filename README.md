@@ -1,5 +1,7 @@
 # ⚡ Time Attack 國中英語單字挑戰 🚀
 
+**👉 [點擊這裡立即開始遊戲 (Live Demo)](https://angela-godbless.github.io/-/) 👈**
+
 ## 🎯 專案簡介
 這是一個基於 HTML、CSS 和 JavaScript 實現的**中翻英單字測驗遊戲**。本專案將國中英語教材單字與遊戲化 (Gamification) 概念結合，加入了「時間壓力」、「連擊加成」和「最高紀錄」等機制，幫助學生在刺激有趣的環境下快速記憶與反射性地運用單字。
 
@@ -27,12 +29,7 @@
 3.  網頁將自動在您的瀏覽器中開啟，即可開始遊戲。
 
 ## 🌐 部署至 GitHub Pages
-您可以輕鬆將此遊戲發佈為一個可公開存取的網站：
-
-1.  在 GitHub 建立一個新的 Repository (例如: `English-Combo-Challenge`)。
-2.  上傳 `index.html` 檔案到該儲存庫的根目錄。
-3.  進入 **Settings** -> **Pages**，將 Source 設定為 `main` 或 `master` 分支的 `/root`。
-4.  GitHub 會為您生成一個公開連結 (`您的用戶名.github.io/儲存庫名稱/`)。
+本專案已成功部署，可直接透過 Live Demo 網址存取。
 
 ---
 
